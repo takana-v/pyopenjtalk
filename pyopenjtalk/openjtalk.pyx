@@ -199,6 +199,20 @@ cdef class OpenJTalk(object):
 
         return njd_results, labels
 
+    def mecab_parse(self, text):
+        if isinstance(text, str):
+            text = text.encode("utf-8")
+        cdef char buff[8192]
+        text2mecab(buff, text)
+        Mecab_analysis(self.mecab, buff)
+        cdef char** mecab_feature = Mecab_get_feature(self.mecab)
+        cdef int mecab_size = Mecab_get_size(self.mecab)
+        features = []
+        for i in range(mecab_size):
+            features.append((<bytes>mecab_feature[i]).decode("utf-8"))
+        Mecab_refresh(self.mecab)
+        return features
+
     def g2p(self, text, kana=False, join=True):
         """Grapheme-to-phoeneme (G2P) conversion
         """

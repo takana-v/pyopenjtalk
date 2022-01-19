@@ -82,6 +82,22 @@ def _lazy_init():
         _extract_dic()
 
 
+def mecab_parse(text):
+    """Wrapper of Mecab
+
+    Args:
+        text (str): Unicode Japanese text.
+
+    Returns:
+        list[str]: Result of morphological analysis.
+    """
+    global _global_jtalk
+    if _global_jtalk is None:
+        _lazy_init()
+        _global_jtalk = OpenJTalk(dn_mecab=OPEN_JTALK_DICT_DIR.encode(path_encoding))
+    return _global_jtalk.mecab_parse(text)
+
+
 def g2p(*args, **kwargs):
     """Grapheme-to-phoeneme (G2P) conversion
 
