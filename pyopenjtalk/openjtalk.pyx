@@ -23,6 +23,12 @@ from openjtalk.mecab2njd cimport mecab2njd
 from openjtalk.njd2jpcommon cimport njd2jpcommon
 from libc.string cimport strlen
 
+import unicodedata
+
+hankaku_alphabet = "".join(chr(0x21 + i) for i in range(94))
+zenkaku_alphabet = "".join(chr(0xff01 + i) for i in range(94))
+translate_table = str.maketrans(hankaku_alphabet, zenkaku_alphabet)
+
 cdef inline int Mecab_load_ex(Mecab *m, char* dicdir, char* userdic):
     if userdic == NULL or strlen(userdic) == 0:
         return Mecab_load(m, dicdir)
@@ -158,12 +164,21 @@ cdef class OpenJTalk(object):
     def _load(self, bytes dn_mecab, bytes user_mecab):
         return Mecab_load_ex(self.mecab, dn_mecab, user_mecab)
 
+    def _text_normalize(self, text: str):
+        text = text.translate(translate_table)
+        ret = ""
+        for s in text:
+            if s in zenkaku_alphabet:
+                ret += s.lower()
+            else:
+                ret += unicodedata.normalize("NFC", s)
+        return ret
 
     def run_frontend(self, text, verbose=0):
         """Run OpenJTalk's text processing frontend
         """
         if isinstance(text, str):
-          text = text.encode("utf-8")
+          text = self._text_normalize(text).encode("utf-8")
         cdef char buff[8192]
         text2mecab(buff, text)
         Mecab_analysis(self.mecab, buff)
